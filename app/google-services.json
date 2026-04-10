@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "6887971621",
+    "project_id": "urpos-fb090",
+    "storage_bucket": "urpos-fb090.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:6887971621:android:39b1547027d5d84a2158cc",
+        "android_client_info": {
+          "package_name": "com.example.purpos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuNRAvkoXymXx3_cQO4L0-OXHV9PzB_NI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
