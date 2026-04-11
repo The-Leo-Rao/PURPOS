@@ -176,7 +176,10 @@ fun HomeScreen(navController: NavController) {
                 showDialog = true
                 step = 1
             }) {
-                Text("Create CSV")
+                Text(
+                    text="Create CSV",
+                    color= MaterialTheme.colorScheme.secondary,
+                    style= MaterialTheme.typography.bodyLarge)
             }
 
             if (showDialog) {

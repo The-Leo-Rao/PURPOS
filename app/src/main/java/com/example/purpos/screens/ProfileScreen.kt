@@ -114,7 +114,10 @@ fun ProfileScreen(navController: NavController) {
                     Button(onClick = {
                         showDialog = false
                     }) {
-                        Text("Close")
+                        Text(
+                            text="Close",
+                            color= MaterialTheme.colorScheme.secondary,
+                            style= MaterialTheme.typography.bodyMedium)
                     }
                 },
                 title = {
