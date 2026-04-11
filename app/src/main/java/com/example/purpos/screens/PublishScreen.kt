@@ -50,7 +50,7 @@ fun PublishScreen(navController: NavController) {
                         restoreState=true
                     } },
                     icon = { Icon(Icons.Default.Publish, contentDescription = "Publish") },
-                    label = { Text("Search") }
+                    label = { Text("Publish") }
                 )
 
                 NavigationBarItem(
@@ -61,7 +61,7 @@ fun PublishScreen(navController: NavController) {
                         restoreState=true
                     } },
                     icon = { Icon(Icons.Default.Analytics, contentDescription = "Analytics") },
-                    label = { Text("Profile") }
+                    label = { Text("Analytics") }
                 )
             }
         }
