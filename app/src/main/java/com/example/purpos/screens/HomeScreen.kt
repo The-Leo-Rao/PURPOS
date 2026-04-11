@@ -1,10 +1,18 @@
 package com.example.purpos.screens
 import android.R
+import android.content.Context
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,6 +34,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.ArrowCircleDown
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,8 +116,8 @@ fun HomeScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(padding),
-            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             var name by remember { mutableStateOf("") }
@@ -118,13 +134,146 @@ fun HomeScreen(navController: NavController) {
                         }
                 }
             }
+            val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+            Box(
+                modifier = Modifier
+                    .height(screenHeight),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Welcome to PURPOS, \n $name",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                    )
 
-            Text(
-                text = "Welcome to PURPOS, \n $name",
-                color = MaterialTheme.colorScheme.primary,
-                style=MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-            )
+                    Spacer(modifier = Modifier.height(60.dp))
+
+                    Icon(
+                        imageVector = Icons.Default.ArrowCircleDown,
+                        contentDescription = "Move Down"
+                    )
+                }
+            }
+            fun createCsvContent(columns: List<String>): String {
+                return columns.joinToString(",")
+            }
+            fun saveCsv(context: Context, fileName: String, content: String) {
+                val file = File(context.filesDir, "$fileName.csv")
+                file.writeText(content)
+            }
+
+            var showDialog by remember { mutableStateOf(false) }
+            var step by remember { mutableStateOf(1) }
+            var columnCount by remember { mutableStateOf(1) }
+            var columnNames by remember { mutableStateOf(List(1) { "" }) }
+            val context = LocalContext.current
+
+            Button(onClick = {
+                showDialog = true
+                step = 1
+            }) {
+                Text("Create CSV")
+            }
+
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDialog = false },
+                    confirmButton = {},
+                    title = {
+                        Text(if (step == 1) "Select Columns" else "Enter Column Names")
+                    },
+                    text = {
+
+                        if (step == 1) {
+                            var expanded by remember { mutableStateOf(false) }
+                            Column {
+                                Text("Number of columns")
+
+                                Box {
+                                    OutlinedTextField(
+                                        value = columnCount.toString(),
+                                        onValueChange = {},
+                                        readOnly = true,
+                                        label = { Text("Columns") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+
+                                    DropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }
+                                    ) {
+                                        (1..9).forEach {
+                                            DropdownMenuItem(
+                                                text = { Text("$it") },
+                                                onClick = {
+                                                    columnCount = it
+                                                    columnNames = List(it) { "" }
+                                                    expanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .clickable { expanded = true }
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Button(onClick = { step = 2 }) {
+                                    Text("Next")
+                                }
+                            }
+
+                        } else {
+
+                            Column {
+                                repeat(columnCount) { index ->
+                                    OutlinedTextField(
+                                        value = columnNames[index],
+                                        onValueChange = { newValue ->
+                                            columnNames = columnNames.toMutableList().apply {
+                                                this[index] = newValue
+                                            }
+                                        },
+                                        label = { Text("Column ${index + 1}") },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Row {
+                                    Button(onClick = { step = 1 }) {
+                                        Text("Back")
+                                    }
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Button(onClick = {
+                                        val name = "csv_${System.currentTimeMillis()}"
+                                        val csv = createCsvContent(columnNames)
+                                        saveCsv(context, name,csv)
+                                        showDialog = false
+                                    }) {
+                                        Text("Create")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+
+
 
 
         }

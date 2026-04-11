@@ -1,5 +1,6 @@
 package com.example.purpos.screens
 
+import android.R
 import android.R.attr.padding
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -12,12 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Publish
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -55,6 +59,7 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +78,10 @@ fun ProfileScreen(navController: NavController) {
             },
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(20.dp)
+                .padding(
+                    top = 45.dp,
+                    start = 15.dp
+                )
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
@@ -81,6 +89,62 @@ fun ProfileScreen(navController: NavController) {
             )
         }
     }
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        var showDialog by remember { mutableStateOf(false) }
+        IconButton(
+            onClick = { showDialog = true },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(
+                    top = 45.dp,
+                    end = 15.dp
+                )
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "About Us"
+            )
+        }
+
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                confirmButton = {
+                    Button(onClick = {
+                        showDialog = false
+                    }) {
+                        Text("Close")
+                    }
+                },
+                title = {
+                    Text(
+                        text = "About Us",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
+                text = {
+                    val scrollState = rememberScrollState()
+                    var bod =
+                        "PURPOS was made with the vision of connecting NGO's to volunteers, facilitating the process of matching requirements to availabilities.\nWe intelligently matches volunteers with NGOs based on skills, availability, and interests. Our tools simplify the volunteering process by providing a seamless and intuitive platform for discovery and engagement.It also enables NGO's to leverage data analytics to better understand volunteer engagement and optimize their outreach."
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(scrollState)
+                    ) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = bod,
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            )
+        }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -333,7 +397,7 @@ fun ProfileScreen(navController: NavController) {
                             LaunchedEffect(query) {
                                 if (query.length > 2) {
 
-                                    kotlinx.coroutines.delay(300)   // debounce (VERY IMPORTANT)
+                                    delay(300)   // debounce (VERY IMPORTANT)
 
                                     val request = FindAutocompletePredictionsRequest.builder()
                                         .setQuery(query)
@@ -387,6 +451,21 @@ fun ProfileScreen(navController: NavController) {
                 )
             }
         }
+
+        Spacer(modifier= Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                auth.signOut()
+                navController.navigate("login"){
+                    popUpTo(0)
+                }
+            }
+        ) {Text(
+            text="Log Out",
+            color= MaterialTheme.colorScheme.secondary,
+            style= MaterialTheme.typography.bodyLarge
+        ) }
 
     }
 }
