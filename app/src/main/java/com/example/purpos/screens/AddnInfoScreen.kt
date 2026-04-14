@@ -29,14 +29,18 @@ import com.google.firebase.firestore.FirebaseFirestore
 @Composable
 fun AddnUI(
     name: String,
-    location: String,
+    locality: String,
+    city: String,
+    state: String,
     Sector: String,
     loading: Boolean,
 
     onFinnishclick:()-> Unit,
     onNameChange:(String)->Unit,
     onSectorChange: (String) -> Unit,
-    onLocationChange: (String) -> Unit,
+    onLocalityChange: (String) -> Unit,
+    onCityChange: (String)-> Unit,
+    onStateChange: (String)-> Unit
     ){
     Column(
         modifier = Modifier
@@ -94,32 +98,41 @@ fun AddnUI(
                 }
             }
         }
+        Spacer(modifier=Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = locality,
+            onValueChange = onLocalityChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Locality", color = MaterialTheme.colorScheme.primary) }
+        )
 
         Spacer(modifier=Modifier.height(16.dp))
 
-        var predictions by remember { mutableStateOf(listOf<String>()) }
+        var citypredictions by remember { mutableStateOf(listOf<String>()) }
         val context = LocalContext.current
         val placesClient = remember { Places.createClient(context) }
-        var query by remember { mutableStateOf("") }
-        LaunchedEffect(query) {
-            if (query.length > 2) {
+        var cityquery by remember { mutableStateOf("") }
+        LaunchedEffect(cityquery) {
+            if (cityquery.length > 2) {
 
-                kotlinx.coroutines.delay(300)   // debounce (VERY IMPORTANT)
+                kotlinx.coroutines.delay(300)
 
                 val request = FindAutocompletePredictionsRequest.builder()
-                    .setQuery(query)
+                    .setQuery(cityquery)
                     .setCountries(listOf("IN"))
+                    .setTypesFilter(listOf("locality"))
                     .build()
 
                 placesClient.findAutocompletePredictions(request)
                     .addOnSuccessListener { response ->
-                        predictions = response.autocompletePredictions.map {
-                            it.getFullText(null).toString()
+                        citypredictions = response.autocompletePredictions.map {
+                            it.getPrimaryText(null).toString()
                         }
                     }
 
             } else {
-                predictions = emptyList()
+                citypredictions = emptyList()
             }
         }
         Box(modifier = Modifier.fillMaxWidth()) {
@@ -127,26 +140,89 @@ fun AddnUI(
             Column {
 
                 OutlinedTextField(
-                    value = query,
+                    value = cityquery,
                     onValueChange = {
-                        query=it
-                        onLocationChange(it)
+                        cityquery=it
+                        onCityChange(it)
                     },
-                    label = { Text("Location") },
+                    label = { Text(
+                            text="City",
+                            color= MaterialTheme.colorScheme.primary) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 val focusManager=LocalFocusManager.current
                 DropdownMenu(
-                    expanded = predictions.isNotEmpty(),
-                    onDismissRequest = { predictions = emptyList() }
+                    expanded = citypredictions.isNotEmpty(),
+                    onDismissRequest = { citypredictions = emptyList() }
                 ) {
-                    predictions.forEach {
+                    citypredictions.forEach {
                         DropdownMenuItem(
                             text = { Text(it) },
                             onClick = {
+                                cityquery=it
                                 focusManager.clearFocus()
-                                onLocationChange(it)
-                                predictions = emptyList()
+                                onCityChange(it)
+                                citypredictions = emptyList()
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier=Modifier.height(16.dp))
+        var statequery by remember { mutableStateOf("") }
+        var statepredictions by remember { mutableStateOf(listOf<String>()) }
+
+        LaunchedEffect(statequery) {
+            if (statequery.length > 2) {
+
+                kotlinx.coroutines.delay(300)
+
+                val request = FindAutocompletePredictionsRequest.builder()
+                    .setQuery(statequery)
+                    .setCountries(listOf("IN"))
+                    .setTypesFilter(listOf("administrative_area_level_1"))
+                    .build()
+
+                placesClient.findAutocompletePredictions(request)
+                    .addOnSuccessListener { response ->
+                        statepredictions = response.autocompletePredictions.map {
+                            it.getPrimaryText(null).toString()
+                        }.distinct()
+                    }
+            } else {
+                statepredictions = emptyList()
+            }
+        }
+        Box(modifier = Modifier.fillMaxWidth()) {
+
+            Column {
+
+                OutlinedTextField(
+                    value = statequery,
+                    onValueChange = {
+                        statequery=it
+                        onStateChange(it)
+                    },
+                    label = { Text(
+                            text="State",
+                            color= MaterialTheme.colorScheme.primary) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                val focusManager=LocalFocusManager.current
+                DropdownMenu(
+                    expanded = statepredictions.isNotEmpty(),
+                    onDismissRequest = { statepredictions = emptyList() }
+                ) {
+                    statepredictions.forEach {
+                        DropdownMenuItem(
+                            text = { Text(it) },
+                            onClick = {
+                                statequery=it
+                                focusManager.clearFocus()
+                                onStateChange(it)
+                                statepredictions = emptyList()
                             }
                         )
                     }
@@ -154,6 +230,7 @@ fun AddnUI(
             }
         }
         val focusManager=LocalFocusManager.current
+        Spacer(modifier=Modifier.height(16.dp))
         Button(
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -161,17 +238,11 @@ fun AddnUI(
             ),
             onClick ={focusManager.clearFocus()
                 onFinnishclick()},
-            enabled = !loading,
-        ) {
-            if (loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text("Continue")
-            }
-        }
+        ) {Text(
+            text="Continue",
+            color= MaterialTheme.colorScheme.secondary,
+            style= MaterialTheme.typography.bodyMedium
+        )}
     }
 }
 @Composable
@@ -179,16 +250,22 @@ fun AddnInfoScreen(navController: NavController) {
     var loading by remember { mutableStateOf(false) }
     var name by remember {mutableStateOf("")}
     var sector by remember{mutableStateOf("")}
-    var location by remember{mutableStateOf("")}
+    var locality by remember{mutableStateOf("")}
+    var city by remember{mutableStateOf("")}
+    var state by remember{mutableStateOf("")}
     AddnUI(
         name=name,
         Sector=sector,
-        location=location,
+        locality=locality,
+        city=city,
+        state=state,
         loading=loading,
 
         onNameChange = {name=it},
         onSectorChange = {sector=it},
-        onLocationChange = { location = it },
+        onLocalityChange = { locality = it },
+        onCityChange = {city=it},
+        onStateChange = {state=it},
         onFinnishclick = {
 
             val auth = FirebaseAuth.getInstance()
@@ -200,7 +277,9 @@ fun AddnInfoScreen(navController: NavController) {
 
                 val data = hashMapOf(
                     "name" to name,
-                    "location" to location,
+                    "locality" to locality,
+                    "city" to city,
+                    "state" to state,
                     "sector" to sector
                 )
 

@@ -15,7 +15,7 @@ val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = pisc,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
+        fontSize = 19.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
@@ -43,7 +43,7 @@ val Typography = Typography(
     titleMedium = TextStyle(
         fontFamily = lemon,
         fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
+        fontSize = 15.sp,
         lineHeight = 26.sp,
         letterSpacing = 0.sp
     ),

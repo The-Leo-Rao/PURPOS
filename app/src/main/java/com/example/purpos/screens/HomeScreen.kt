@@ -181,6 +181,7 @@ fun HomeScreen(navController: NavController) {
                     color= MaterialTheme.colorScheme.secondary,
                     style= MaterialTheme.typography.bodyLarge)
             }
+            Spacer(modifier= Modifier.height(15.dp))
 
             if (showDialog) {
                 AlertDialog(
