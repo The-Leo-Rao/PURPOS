@@ -87,7 +87,7 @@ fun AddnUI(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                listOf("Health", "Education","Environmental","Poverty Alleviation","women empowerment","Disaster Relief","Other").forEach { option ->
+                listOf("Agriculture", "Animal Welfare", "Art and Culture", "Child Welfare", "Disaster Relief", "Education", "Environmental", "Health", "Legal Aid", "Poverty Alleviation", "Social Welfare", "Women Empowerment").forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option) },
                         onClick = {

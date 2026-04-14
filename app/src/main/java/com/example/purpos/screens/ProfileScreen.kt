@@ -1,5 +1,7 @@
 package com.example.purpos.screens
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +52,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import android.net.Uri
+import android.provider.MediaStore
 import android.widget.Space
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -60,6 +63,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.draw.clip
@@ -67,27 +71,93 @@ import androidx.compose.ui.layout.ContentScale
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
+import androidx.compose.material.icons.filled.Delete
+import java.io.ByteArrayOutputStream
 
-
-fun uploadProfileImage(uri: Uri?, onComplete: (String) -> Unit) {
+fun uploadProfileImage(
+    uri: Uri,
+    onSuccess: (String) -> Unit,
+    onLoading: (Boolean) -> Unit
+) {
     val user = FirebaseAuth.getInstance().currentUser ?: return
     val uid = user.uid
+
     val storageRef = FirebaseStorage.getInstance()
         .reference
         .child("profile_images/$uid.jpg")
 
-    if (uri != null) {
-        storageRef.putFile(uri)
-            .addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    val url = downloadUri.toString()
-                    FirebaseFirestore.getInstance()
-                        .collection("users")
-                        .document(uid)
-                        .set(mapOf("imageUrl" to url), SetOptions.merge())
-                    onComplete(url) // ← notify UI
+    onLoading(true)
+
+    storageRef.putFile(uri)
+        .continueWithTask { task ->
+            if (!task.isSuccessful) throw task.exception ?: Exception("Upload failed")
+            storageRef.downloadUrl
+        }
+        .addOnSuccessListener { downloadUri ->
+
+            val url = downloadUri.toString()
+
+            FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(uid)
+                .set(mapOf("imageUrl" to url), SetOptions.merge())
+
+            onSuccess(url)
+            onLoading(false)
+        }
+        .addOnFailureListener {
+            onLoading(false)
+        }
+}
+
+fun compressImage(context: Context, uri: Uri): ByteArray {
+    val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+    val resized = Bitmap.createScaledBitmap(bitmap, 800, 800, true)
+    val stream = ByteArrayOutputStream()
+    resized.compress(Bitmap.CompressFormat.JPEG, 70, stream)
+    return stream.toByteArray()
+}
+fun uploadGalleryImage(context: Context, uri: Uri, onComplete: (String) -> Unit) {
+    val user = FirebaseAuth.getInstance().currentUser ?: return
+    val uid = user.uid
+    val fileName = "gallery_${System.currentTimeMillis()}.jpg"
+    val storageRef = FirebaseStorage.getInstance()
+        .reference
+        .child("gallery_images/$uid/$fileName")
+    val compressed = compressImage(context, uri)
+    storageRef.putBytes(compressed)
+        .addOnSuccessListener {
+            storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                val url = downloadUri.toString()
+                val db = FirebaseFirestore.getInstance()
+                val docRef = db.collection("users").document(uid)
+                db.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+                    val current = snapshot.get("galleryUrls") as? List<String> ?: emptyList()
+                    transaction.update(docRef, "galleryUrls", current + url)
+                }.addOnSuccessListener {
+                    onComplete(url)
                 }
             }
+        }
+}
+
+
+fun deleteGalleryImage(url: String, onComplete: () -> Unit) {
+    val user = FirebaseAuth.getInstance().currentUser ?: return
+    val uid = user.uid
+    val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(url)
+
+    storageRef.delete().addOnSuccessListener {
+        val db = FirebaseFirestore.getInstance()
+        val docRef = db.collection("users").document(uid)
+        db.runTransaction { transaction ->
+            val snapshot = transaction.get(docRef)
+            val current = snapshot.get("galleryUrls") as? List<String> ?: emptyList()
+            transaction.update(docRef, "galleryUrls", current - url)
+        }.addOnSuccessListener {
+            onComplete()
+        }
     }
 }
 
@@ -189,12 +259,39 @@ fun ProfileScreen(navController: NavController) {
             val user = FirebaseAuth.getInstance().currentUser
             val db = FirebaseFirestore.getInstance()
             var imageUrl by remember { mutableStateOf("") }
-            val imagePickerLauncher = rememberLauncherForActivityResult(
+            var imageUri by remember { mutableStateOf<Uri?>(null) }
+            var isUploading by remember { mutableStateOf(false) }
+            val imagePickerLauncher =
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.GetContent()
+                ) { uri ->
+
+                    uri?.let {
+                        imageUri = it   // instant preview
+
+                        uploadProfileImage(
+                            uri = it,
+                            onSuccess = { url ->
+                                imageUrl = url
+                                imageUri = null
+                            },
+                            onLoading = {
+                                isUploading = it
+                            }
+                        )
+                    }
+                }
+            var galleryUrls by remember { mutableStateOf(listOf<String>()) }
+            var showGalleryDialog by remember { mutableStateOf(false) }
+            var imageToDelete by remember { mutableStateOf<String?>(null) }
+            val context = LocalContext.current
+            val galleryPickerLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.GetContent()
             ) { uri: Uri? ->
                 uri?.let {
-                    uploadProfileImage(it) { downloadedUrl ->
-                        imageUrl = downloadedUrl
+                    uploadGalleryImage(context, it) { newUrl ->
+                        galleryUrls = galleryUrls + newUrl
+                        isUploading = false
                     }
                 }
             }
@@ -215,6 +312,7 @@ fun ProfileScreen(navController: NavController) {
                                 sector = document.getString("sector") ?: ""
                                 imageUrl = document.getString("imageUrl") ?: ""
                                 purposeStatement = document.getString("purpose") ?: ""
+                                galleryUrls = (document.get("galleryUrls") as? List<String>) ?: emptyList()
                             }
                         }
                 }
@@ -244,23 +342,50 @@ fun ProfileScreen(navController: NavController) {
                 contentAlignment = Alignment.BottomEnd,
                 modifier = Modifier
                     .size(100.dp)
-                    .clickable { imagePickerLauncher.launch("image/*") }
+                    .clickable {
+                        imagePickerLauncher.launch("image/*")
+                    }
             ) {
-                if (imageUrl.isNotEmpty()) {
-                    Image(
-                        painter = rememberAsyncImagePainter(imageUrl),
-                        contentDescription = "Profile Photo",
-                        contentScale = ContentScale.Crop,
+
+                when {
+                    imageUri != null -> {
+                        Image(
+                            painter = rememberAsyncImagePainter(imageUri),
+                            contentDescription = "Profile Photo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
+                        )
+                    }
+
+                    imageUrl.isNotEmpty() -> {
+                        Image(
+                            painter = rememberAsyncImagePainter(imageUrl),
+                            contentDescription = "Profile Photo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
+                        )
+                    }
+
+                    else -> {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Profile Photo",
+                            modifier = Modifier.size(100.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                if (isUploading) {
+                    CircularProgressIndicator(
                         modifier = Modifier
-                            .size(100.dp)
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Profile Photo",
-                        modifier = Modifier.size(100.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                            .align(Alignment.Center)
+                            .size(28.dp),
+                        strokeWidth = 3.dp
                     )
                 }
 
@@ -268,14 +393,14 @@ fun ProfileScreen(navController: NavController) {
                     modifier = Modifier
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(MaterialTheme.colorScheme.onPrimary),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Change Photo",
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -297,6 +422,7 @@ fun ProfileScreen(navController: NavController) {
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
+                        modifier=Modifier.weight(1f)
                     )
 
                     Spacer(modifier = Modifier.width(10.dp))
@@ -368,6 +494,7 @@ fun ProfileScreen(navController: NavController) {
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
+                        modifier=Modifier.weight(1f)
                     )
 
                     Spacer(modifier = Modifier.width(10.dp))
@@ -745,6 +872,157 @@ fun ProfileScreen(navController: NavController) {
                         )
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Gallery Card
+            Card(Modifier
+                .fillMaxWidth(0.85f)
+                .clickable { showGalleryDialog = true }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Gallery (${galleryUrls.size})",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Gallery",
+                    )
+                }
+            }
+
+            if (showGalleryDialog) {
+                AlertDialog(
+                    onDismissRequest = { showGalleryDialog = false },
+                    confirmButton = {
+                        Button(onClick = { showGalleryDialog = false }) {
+                            Text(
+                                text = "Done",
+                                color = MaterialTheme.colorScheme.secondary,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = "Gallery",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 400.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Button(
+                                onClick = { galleryPickerLauncher.launch("image/*") },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "+ Add Image",
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            if (galleryUrls.isEmpty()) {
+                                Text(
+                                    text = "No images yet. Add some!",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center
+                                )
+                            } else {
+                                galleryUrls.forEach { url ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(url),
+                                            contentDescription = "Gallery Image",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .size(64.dp)
+                                                .clip(MaterialTheme.shapes.medium)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        IconButton(
+                                            onClick = { imageToDelete = url }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Delete Image",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (imageToDelete != null) {
+                AlertDialog(
+                    onDismissRequest = { imageToDelete = null },
+                    confirmButton = {
+                        Button(onClick = {
+                            val urlToRemove = imageToDelete!!
+                            deleteGalleryImage(urlToRemove) {
+                                galleryUrls = galleryUrls - urlToRemove
+                            }
+                            imageToDelete = null
+                        }) {
+                            Text(
+                                text = "Delete",
+                                color = MaterialTheme.colorScheme.secondary,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = { imageToDelete = null }) {
+                            Text(
+                                text = "Cancel",
+                                color = MaterialTheme.colorScheme.secondary,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = "Delete Image?",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = "This will permanently delete the image from your gallery.",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                )
             }
 
             Spacer(modifier= Modifier.height(24.dp))
