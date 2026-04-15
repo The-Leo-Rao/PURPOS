@@ -50,7 +50,8 @@ data class UserPost(
     val id: String = "",
     val title: String = "",
     val body: String = "",
-    val location: String = "",
+    val city: String = "",
+    val state: String="",
     val time: Long = 0L
 )
 
@@ -61,8 +62,8 @@ fun PublishScreen(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
     val user = auth.currentUser
-
-    var locationdata by remember { mutableStateOf("") }
+    var statedata by remember { mutableStateOf("")}
+    var citydata by remember { mutableStateOf("") }
 
     LaunchedEffect(user?.uid) {
         user?.let {
@@ -70,7 +71,8 @@ fun PublishScreen(navController: NavController) {
                 .document(it.uid)
                 .get()
                 .addOnSuccessListener { document ->
-                    locationdata = document.getString("location") ?: ""
+                    citydata = document.getString("city") ?: ""
+                    statedata = document.getString("state") ?: ""
                 }
         }
     }
@@ -159,7 +161,8 @@ fun PublishScreen(navController: NavController) {
                                     id = doc.id,
                                     title = doc.getString("title") ?: "",
                                     body = doc.getString("body") ?: "",
-                                    location = doc.getString("location") ?: "",   // add this
+                                    state=doc.getString("state")?: "",
+                                    city = doc.getString("city") ?: "",
                                     time = doc.getLong("time") ?: 0L
                                 )
                             )
@@ -255,7 +258,8 @@ fun PublishScreen(navController: NavController) {
                                 "NGOid" to uid,
                                 "title" to title,
                                 "body" to body,
-                                "location" to locationdata,
+                                "state" to statedata,
+                                "city" to citydata,
                                 "time" to newTime
                             )
 
@@ -267,7 +271,8 @@ fun PublishScreen(navController: NavController) {
                                             id = docRef.id,
                                             title = title,
                                             body = body,
-                                            location = locationdata,
+                                            state=statedata,
+                                            city = citydata,
                                             time = newTime
                                         )
                                     )
