@@ -16,6 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.purpos.ui.theme.PURPOSTheme
 import com.example.purpos.navigation.AppNavigation
 import com.google.android.libraries.places.api.Places
+import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,6 +25,24 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         if (!Places.isInitialized()) {
             Places.initialize(applicationContext, "AIzaSyBSmbh9UgusHX6zpLAKZ6649iZ9uM4mjgY") }
+
+        val options = FirebaseOptions.Builder()
+            .setProjectId("ngo-project-2eaec")
+            .setApplicationId("1:554387372544:android:0cb62513fe33e2ce68b6e5")
+            .setApiKey("AIzaSyAWd3mhxXKpvtaKJ0gn6CWO2l1nGV0JV-E")
+            .setGcmSenderId("554387372544")
+            .build()
+
+        val secondApp = try {
+            FirebaseApp.getInstance("VOLUNTEER_APP")
+        } catch (e: Exception) {
+            FirebaseApp.initializeApp(
+                applicationContext,
+                options,
+                "VOLUNTEER_APP"
+            )!!
+        }
+
         setContent {
             PURPOSTheme {
                 Surface(

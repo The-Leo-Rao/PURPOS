@@ -135,6 +135,10 @@ fun LoginScreen(navController: NavController) {
         onTogglePassword = { passwordVisible = !passwordVisible },
 
         onLoginClick = {
+            if (email.isBlank() || password.isBlank()) {
+                errMessage = "Please enter email and password"
+                return@LoginUI
+            }
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {

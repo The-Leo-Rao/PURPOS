@@ -24,11 +24,13 @@ import com.example.purpos.ui.theme.PURPOSTheme
 fun SignUpUI(
     email: String,
     password: String,
+    password2: String,
     passwordVisible: Boolean,
     errMessage: String,
 
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onPasswordChange2: (String) -> Unit,
     onTogglePassword: () -> Unit,
     onSignUpClick: () -> Unit,
     onLoginClick: () -> Unit
@@ -79,6 +81,28 @@ fun SignUpUI(
             }
         )
 
+        OutlinedTextField(
+            value = password2,
+            onValueChange = onPasswordChange2,
+            label = { Text("Confirm Password", color = MaterialTheme.colorScheme.primary) },
+            singleLine = true,
+            visualTransformation = if (passwordVisible)
+                VisualTransformation.None
+            else
+                PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick =onTogglePassword) {
+                    Icon(
+                        imageVector = if (passwordVisible)
+                            Icons.Default.Visibility
+                        else
+                            Icons.Default.VisibilityOff,
+                        contentDescription = "Toggle password"
+                    )
+                }
+            }
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(errMessage, color = MaterialTheme.colorScheme.error)
@@ -110,17 +134,20 @@ fun SignUpScreen(navController: NavController) {
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var password2 by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errMessage by remember { mutableStateOf("") }
 
     SignUpUI(
         email = email,
         password = password,
+        password2=password2,
         passwordVisible = passwordVisible,
         errMessage = errMessage,
 
         onEmailChange = { email = it },
         onPasswordChange = { password = it },
+        onPasswordChange2= { password2 = it },
         onTogglePassword = { passwordVisible = !passwordVisible },
 
         onSignUpClick = {
@@ -136,6 +163,10 @@ fun SignUpScreen(navController: NavController) {
 
                 password.length < 8 -> {
                     errMessage = "Password must be at least 8 characters"
+                }
+
+                password!=password2 ->{
+                    errMessage="Passwords do not match"
                 }
 
                 else -> {
@@ -167,11 +198,13 @@ fun SignUpPreview() {
         SignUpUI(
             email = "",
             password = "",
+            password2="",
             passwordVisible = false,
             errMessage = "",
 
             onEmailChange = {},
             onPasswordChange = {},
+            onPasswordChange2 = {},
             onTogglePassword = {},
             onSignUpClick = {},
             onLoginClick = {}

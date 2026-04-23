@@ -1,5 +1,6 @@
 package com.example.purpos.screens
 
+import android.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,12 +39,22 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 
 data class UserPost(
@@ -54,10 +65,21 @@ data class UserPost(
     val state: String="",
     val time: Long = 0L
 )
+data class SuccessCase(
+    val name: String = "",
+    val email: String = "",
+    val phone: String = ""
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PublishScreen(navController: NavController) {
+    val secondApp = FirebaseApp.getInstance("VOLUNTEER_APP")
+    val volunteerDb = FirebaseFirestore.getInstance(secondApp)
+    val currentNgoId = FirebaseAuth.getInstance().currentUser?.uid
+    var volunteers by remember { mutableStateOf<List<DocumentSnapshot>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var cases by remember { mutableStateOf(listOf<SuccessCase>()) }
     var showDialog by remember { mutableStateOf(false) }
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
@@ -77,11 +99,25 @@ fun PublishScreen(navController: NavController) {
         }
     }
 
+    LaunchedEffect(Unit) {
+        volunteerDb.collection("addressedproblems")
+            .whereEqualTo("ngo_id", currentNgoId)
+            .get()
+            .addOnSuccessListener { result ->
+                volunteers = result.documents
+                loading = false
+            }
+            .addOnFailureListener {
+                loading = false
+            }
+    }
+
     val posts = remember { mutableStateListOf<UserPost>() }
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
     var showSecondDialog by remember { mutableStateOf(false) }
     var selectedPost by remember { mutableStateOf<UserPost?>(null) }
+    var message by remember { mutableStateOf("") }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -229,7 +265,7 @@ fun PublishScreen(navController: NavController) {
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
-                title = { Text("Create Post") },
+                title = { Text("Create Post", style= MaterialTheme.typography.bodyMedium) },
                 text = {
                     Column {
                         OutlinedTextField(
@@ -245,19 +281,28 @@ fun PublishScreen(navController: NavController) {
                             label = { Text("Post Body") },
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(message,color= MaterialTheme.colorScheme.error,style= MaterialTheme.typography.labelSmall)
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
+                            if (title.isBlank() || body.isBlank()) {
+                                message = "Title and Body cannot be empty"
+                                return@Button
+                            }
+                            message = ""
+                            val cleanTitle = title.trim()
+                            val cleanBody = body.trim()
                             val uid = user?.uid ?: return@Button
                             val newTime = System.currentTimeMillis()
 
                             // Build the Firestore document
                             val postData = hashMapOf(
                                 "NGOid" to uid,
-                                "title" to title,
-                                "body" to body,
+                                "title" to cleanTitle,
+                                "body" to cleanBody,
                                 "state" to statedata,
                                 "city" to citydata,
                                 "time" to newTime
@@ -303,16 +348,70 @@ fun PublishScreen(navController: NavController) {
         }
 
         if (showSecondDialog && selectedPost != null) {
+            val scrollState = rememberScrollState()
             AlertDialog(
                 onDismissRequest = { showSecondDialog = false },
                 title = {
                     Text(
                         text = "Delete/End your post",
-                        color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 },
-                text = {},
+                text = {
+                    when {
+                        loading -> {
+                            CircularProgressIndicator()
+                        }
+
+                        volunteers.isEmpty() -> {
+                            Text("No volunteers matched yet.\nDon't Worry! We're at it", textAlign = TextAlign.Left)
+                        }
+
+                        else -> {
+                            val matchedVolunteers = volunteers.filter { doc ->
+                                doc.getLong("post_id") == selectedPost?.time
+                            }
+                            LazyColumn {
+                                items(matchedVolunteers) { doc ->
+
+                                    val name = doc.getString("name") ?: ""
+                                    val city = doc.getString("city") ?: ""
+                                    val sector = doc.getString("sector") ?: ""
+                                    val phone = doc.getString("phone") ?: ""
+
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        elevation = CardDefaults.cardElevation(4.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column {
+                                                Text(name, fontWeight = FontWeight.Bold)
+                                                Text(city)
+                                                Text(sector)
+                                                Text(phone)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+//                    Column(
+//                        modifier = Modifier
+//                            .heightIn(max = 300.dp)
+//                            .verticalScroll(scrollState)
+//                    ) {
+//                        Text("List of Volunteers")
+//                        Card(modifier = Modifier.fillMaxWidth()) {
+//                            Text("Hi",textAlign = TextAlign.Start)
+//                        }
+//                    }
+                },
                 confirmButton = {
                     TextButton(
                         onClick = {

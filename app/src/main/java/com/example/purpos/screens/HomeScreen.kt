@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -37,12 +38,21 @@ import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.ArrowCircleDown
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.File
 
+suspend fun createAndUploadCsv(name: String, content: String) {
+    val ref = FirebaseStorage.getInstance().reference
+        .child("${userStoragePath()}/$name.csv")
+    ref.putBytes(content.toByteArray()).await()
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -161,10 +171,6 @@ fun HomeScreen(navController: NavController) {
             fun createCsvContent(columns: List<String>): String {
                 return columns.joinToString(",")
             }
-            fun saveCsv(context: Context, fileName: String, content: String) {
-                val file = File(context.filesDir, "$fileName.csv")
-                file.writeText(content)
-            }
 
             var showDialog by remember { mutableStateOf(false) }
             var step by remember { mutableStateOf(1) }
@@ -181,7 +187,22 @@ fun HomeScreen(navController: NavController) {
                     color= MaterialTheme.colorScheme.secondary,
                     style= MaterialTheme.typography.bodyLarge)
             }
-            Spacer(modifier= Modifier.height(15.dp))
+
+            Spacer(modifier= Modifier.height(24.dp))
+
+            Text("Our PURPOS", color= MaterialTheme.colorScheme.primary, style= MaterialTheme.typography.titleMedium,
+                modifier= Modifier.fillMaxWidth().padding(start=16.dp), textAlign = TextAlign.Start)
+
+            Spacer(modifier= Modifier.height(8.dp))
+
+            Text("PURPOS was made with the vision of connecting NGO's to volunteers, facilitating the process of matching requirements to availabilities.\nWe intelligently match volunteers with NGOs based on skills, availability, and interests. Our tools simplify the volunteering process by providing a seamless and intuitive platform for discovery and engagement.It also enables NGO's to leverage data analytics to better understand volunteer engagement and optimize their outreach.\n\n", style= MaterialTheme.typography.bodyMedium,
+                modifier= Modifier.fillMaxWidth().padding(start=16.dp,end=16.dp))
+
+            Spacer(modifier= Modifier.height(8.dp))
+
+            Text("Built for NGO's. Powered by purpose.\n", color= MaterialTheme.colorScheme.primary, style= MaterialTheme.typography.titleMedium)
+
+            Spacer(modifier= Modifier.height(24.dp))
 
             if (showDialog) {
                 AlertDialog(
@@ -262,13 +283,40 @@ fun HomeScreen(navController: NavController) {
 
                                     Spacer(modifier = Modifier.width(8.dp))
 
-                                    Button(onClick = {
-                                        val name = "csv_${System.currentTimeMillis()}"
-                                        val csv = createCsvContent(columnNames)
-                                        saveCsv(context, name,csv)
-                                        showDialog = false
-                                    }) {
-                                        Text("Create")
+                                    val scope = rememberCoroutineScope()
+                                    var uploading by remember { mutableStateOf(false) }
+
+                                    Button(
+                                        onClick = {
+                                            val fileName = "csv_${System.currentTimeMillis()}"
+                                            val csv = createCsvContent(columnNames)
+                                            uploading = true
+                                            scope.launch {
+                                                try {
+                                                    createAndUploadCsv(fileName, csv)
+                                                    showDialog = false
+                                                } catch (e: Exception) {
+                                                    // show a snackbar or message if needed
+                                                } finally {
+                                                    uploading = false
+                                                }
+                                            }
+                                        },
+                                        enabled = !uploading
+                                    ) {
+                                        if (uploading) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(18.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.secondary
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "Create",
+                                                color = MaterialTheme.colorScheme.secondary,
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                        }
                                     }
                                 }
                             }

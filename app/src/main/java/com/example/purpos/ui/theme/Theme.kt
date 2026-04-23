@@ -23,7 +23,7 @@ private val DarkColorScheme = darkColorScheme(
 private val LightColorScheme = lightColorScheme(
     background = Bone,
     primary = DeepTeal,
-    tertiary = Black,
+    secondary = Black,
     error = Color(194, 1, 1, 255)
 )
 

@@ -77,7 +77,7 @@ fun AddnUI(
                 value = Sector,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Sector") },
+                label = { Text("Sector", color= MaterialTheme.colorScheme.primary) },
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded)
                 },

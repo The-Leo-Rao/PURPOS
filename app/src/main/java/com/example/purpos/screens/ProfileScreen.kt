@@ -214,15 +214,15 @@ fun ProfileScreen(navController: NavController) {
                             },
                             title = {
                                 Text(
-                                    text = "About Us",
+                                    text = "Data Security & Privacy",
                                     color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.titleMedium,
                                 )
                             },
                             text = {
                                 val scrollState = rememberScrollState()
                                 var bod =
-                                    "PURPOS was made with the vision of connecting NGO's to volunteers, facilitating the process of matching requirements to availabilities.\nWe intelligently matches volunteers with NGOs based on skills, availability, and interests. Our tools simplify the volunteering process by providing a seamless and intuitive platform for discovery and engagement.It also enables NGO's to leverage data analytics to better understand volunteer engagement and optimize their outreach.\n\n Built for NGO's. Powered by purpose."
+                                    "PURPOS securely stores all user data using our trusted cloud infrastructure, designed with standard security practices to help keep your information protected and reliable. All communication between the app and our servers is handled through secure APIs with encrypted connections, reducing the risk of unauthorized access or data leaks during transmission.\n\n We take data privacy and security seriously, and our systems are built to ensure that your information is stored safely, accessed only when necessary, and managed responsibly. Regular security measures and modern backend technologies are used to maintain the integrity and confidentiality of your data.\n\n With us, you can rest assured that we will manage your operations seamlessly, helping you achieve your PURPOS."
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -410,7 +410,9 @@ fun ProfileScreen(navController: NavController) {
             //Name
             Card(Modifier.fillMaxWidth(0.85f)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 17.dp, end = 7.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -421,7 +423,7 @@ fun ProfileScreen(navController: NavController) {
                         text = "Name: $name",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Start,
                         modifier=Modifier.weight(1f)
                     )
 
@@ -482,7 +484,9 @@ fun ProfileScreen(navController: NavController) {
             //Sector
             Card(Modifier.fillMaxWidth(0.85f)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 17.dp, end = 7.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -493,7 +497,7 @@ fun ProfileScreen(navController: NavController) {
                         text = "Sector: $sector",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Start,
                         modifier=Modifier.weight(1f)
                     )
 
@@ -806,7 +810,9 @@ fun ProfileScreen(navController: NavController) {
                     .fillMaxWidth(0.85f)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 17.dp, end = 7.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
 
@@ -819,7 +825,7 @@ fun ProfileScreen(navController: NavController) {
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Left,
+                        textAlign = TextAlign.Start,
                     )
 
                     Spacer(modifier = Modifier.width(10.dp))
@@ -941,7 +947,7 @@ fun ProfileScreen(navController: NavController) {
 
                             if (galleryUrls.isEmpty()) {
                                 Text(
-                                    text = "No images yet. Add some!",
+                                    text = "No images yet. Add some! (Give it a second to load)",
                                     color = MaterialTheme.colorScheme.primary,
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.fillMaxWidth(),
