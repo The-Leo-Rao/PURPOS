@@ -44,6 +44,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DatasetLinked
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -168,16 +169,16 @@ fun PublishScreen(navController: NavController) {
                     label = { Text("Publish") }
                 )
                 NavigationBarItem(
-                    selected = currentRoute == "analytics",
+                    selected = currentRoute == "My Data",
                     onClick = {
-                        navController.navigate("Analytics") {
+                        navController.navigate("My Data") {
                             popUpTo(navController.graph.startDestinationId)
                             launchSingleTop = true
                             restoreState = true
                         }
                     },
-                    icon = { Icon(Icons.Default.Analytics, contentDescription = "Analytics") },
-                    label = { Text("Analytics") }
+                    icon = { Icon(Icons.Default.DatasetLinked, contentDescription = "My Data") },
+                    label = { Text("My Data") }
                 )
             }
         }

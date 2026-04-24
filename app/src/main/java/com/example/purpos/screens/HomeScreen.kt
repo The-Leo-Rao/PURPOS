@@ -38,6 +38,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.ArrowCircleDown
+import androidx.compose.material.icons.filled.DatasetLinked
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalConfiguration
@@ -108,14 +109,14 @@ fun HomeScreen(navController: NavController) {
                 )
 
                 NavigationBarItem(
-                    selected = currentRoute == "analytics",
-                    onClick = { navController.navigate("Analytics"){
+                    selected = currentRoute == "My Data",
+                    onClick = { navController.navigate("My Data"){
                         popUpTo(navController.graph.startDestinationId)
                         launchSingleTop=true
                         restoreState=true
                     } },
-                    icon = { Icon(Icons.Default.Analytics, contentDescription = "Analytics") },
-                    label = { Text("Analytics") }
+                    icon = { Icon(Icons.Default.DatasetLinked, contentDescription = "My Data") },
+                    label = { Text("My Data") }
                 )
             }
         }
@@ -183,7 +184,7 @@ fun HomeScreen(navController: NavController) {
                 step = 1
             }) {
                 Text(
-                    text="Create CSV",
+                    text="Create a Dataframe",
                     color= MaterialTheme.colorScheme.secondary,
                     style= MaterialTheme.typography.bodyLarge)
             }

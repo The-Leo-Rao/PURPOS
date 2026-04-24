@@ -8,9 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHost
 import com.example.purpos.screens.ForgotPasswordScreen
 import com.example.purpos.screens.AddnInfoScreen
-import com.example.purpos.screens.AnalyticsScreen
+import com.example.purpos.screens.DataScreen
 import com.example.purpos.screens.PublishScreen
 import com.example.purpos.screens.ProfileScreen
+import com.example.purpos.screens.AnalyticsScreen
 
 @Composable
 fun AppNavigation() {
@@ -26,8 +27,9 @@ fun AppNavigation() {
         composable("home"){HomeScreen(navController)}
         composable("forgotp"){ ForgotPasswordScreen(navController) }
         composable("addn"){ AddnInfoScreen(navController) }
-        composable("analytics"){AnalyticsScreen(navController)}
+        composable("My Data"){DataScreen(navController)}
         composable("publish"){PublishScreen(navController)}
         composable("profile"){ProfileScreen(navController)}
+        composable("analytics"){AnalyticsScreen(navController)}
     }
 }

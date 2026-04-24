@@ -15,3 +15,12 @@ interface ApiService {
         @Part reference_file: MultipartBody.Part
     ): Response<String>
 }
+
+interface ApiService2 {
+
+    @Multipart
+    @POST("/api/visualizations/generate-dashboard")
+    suspend fun submitData(
+        @Part file: MultipartBody.Part
+    ): Response<String>
+}
