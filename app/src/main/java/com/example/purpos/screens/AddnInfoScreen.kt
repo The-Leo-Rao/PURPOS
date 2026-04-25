@@ -24,6 +24,8 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -253,6 +255,7 @@ fun AddnInfoScreen(navController: NavController) {
     var locality by remember{mutableStateOf("")}
     var city by remember{mutableStateOf("")}
     var state by remember{mutableStateOf("")}
+    var showVerifyDialog by remember { mutableStateOf(false) }
     AddnUI(
         name=name,
         Sector=sector,
@@ -267,34 +270,106 @@ fun AddnInfoScreen(navController: NavController) {
         onCityChange = {city=it},
         onStateChange = {state=it},
         onFinnishclick = {
-
+            loading = true
             val auth = FirebaseAuth.getInstance()
             val db = FirebaseFirestore.getInstance()
+            val user = auth.currentUser
 
-            val uid = auth.currentUser?.uid
+            user?.reload()?.addOnCompleteListener {
 
-            if (uid != null) {
+                val refreshedUser = FirebaseAuth.getInstance().currentUser
 
-                val data = hashMapOf(
-                    "name" to name,
-                    "locality" to locality,
-                    "city" to city,
-                    "state" to state,
-                    "sector" to sector
-                )
+                if (refreshedUser != null && refreshedUser.isEmailVerified) {
 
-                db.collection("users")
-                    .document(uid)
-                    .set(data)
-                    .addOnSuccessListener {
-                        loading=false
-                        navController.navigate("home")
-                    }
-                    .addOnFailureListener {
-                        loading=false
-                        println("Error saving data: ${it.message}")
-                    }
+                    val uid = refreshedUser.uid
+
+                    val data = hashMapOf(
+                        "name" to name,
+                        "locality" to locality,
+                        "city" to city,
+                        "state" to state,
+                        "sector" to sector
+                    )
+
+                    db.collection("users")
+                        .document(uid)
+                        .set(data)
+                        .addOnSuccessListener {
+                            loading = false
+                            navController.navigate("home")
+                        }
+                        .addOnFailureListener {
+                            loading = false
+                        }
+
+                } else {
+                    loading = false
+                    showVerifyDialog = true
+                }
             }
+
         }
     )
+    if (showVerifyDialog) {
+        AlertDialog(
+            onDismissRequest = { showVerifyDialog = false },
+            title = { Text("Verify Email",style= MaterialTheme.typography.titleMedium) },
+            text = { Text("Please verify using the link sent to your email. (check Spam as well)") },
+
+            confirmButton = {
+                Row {
+
+                    Button(
+                        onClick = {
+                            FirebaseAuth.getInstance().currentUser
+                                ?.sendEmailVerification()
+                                ?.addOnSuccessListener {
+                                    showVerifyDialog = false
+                                }
+                        }
+                    ) {
+                        Text(
+                            "Resend",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = {
+                            FirebaseAuth.getInstance().currentUser
+                                ?.reload()
+                                ?.addOnSuccessListener {
+                                    if (FirebaseAuth.getInstance().currentUser?.isEmailVerified == true) {
+                                        showVerifyDialog = false
+                                    }
+                                }
+                        }
+                    ) {
+                        Text(
+                            "I Verified",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            },
+
+            dismissButton = {
+                OutlinedButton(onClick = {
+
+                    FirebaseAuth.getInstance().currentUser
+                        ?.delete()
+                        ?.addOnCompleteListener {
+                            FirebaseAuth.getInstance().signOut()
+                            navController.navigate("signup")
+                        }
+
+                }) {
+                    Text("Cancel Signup",style= MaterialTheme.typography.labelSmall)
+                }
+            }
+        )
+    }
 }

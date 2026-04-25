@@ -173,9 +173,19 @@ fun SignUpScreen(navController: NavController) {
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                navController.navigate("addn") {
-                                    popUpTo("signup") { inclusive = true }
-                                }
+
+                                FirebaseAuth.getInstance().currentUser
+                                    ?.sendEmailVerification()
+                                    ?.addOnSuccessListener {
+
+                                        navController.navigate("addn") {
+                                            popUpTo("signup") { inclusive = true }
+                                        }
+
+                                    }
+                                    ?.addOnFailureListener {
+                                        errMessage = "Couldn't send verification email"
+                                    }
                             } else {
                                 errMessage = task.exception?.message ?: "Signup failed"
                             }
