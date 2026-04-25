@@ -12,6 +12,7 @@ import com.example.purpos.screens.DataScreen
 import com.example.purpos.screens.PublishScreen
 import com.example.purpos.screens.ProfileScreen
 import com.example.purpos.screens.AnalyticsScreen
+import com.example.purpos.screens.EmVerificationScreen
 
 @Composable
 fun AppNavigation() {
@@ -31,5 +32,6 @@ fun AppNavigation() {
         composable("publish"){PublishScreen(navController)}
         composable("profile"){ProfileScreen(navController)}
         composable("analytics"){AnalyticsScreen(navController)}
+        composable("emailver"){EmVerificationScreen(navController)}
     }
 }

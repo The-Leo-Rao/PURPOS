@@ -253,18 +253,19 @@ fun HomeScreen(navController: NavController) {
                                 Spacer(modifier = Modifier.height(16.dp))
 
                                 Button(onClick = { step = 2 }) {
-                                    Text("Next")
+                                    Text("Next",color= MaterialTheme.colorScheme.tertiary)
                                 }
                             }
 
                         } else {
-
                             Column {
+                                val allFilled = columnNames.all { it.trim().isNotEmpty() }
                                 repeat(columnCount) { index ->
                                     OutlinedTextField(
                                         value = columnNames[index],
                                         onValueChange = { newValue ->
                                             columnNames = columnNames.toMutableList().apply {
+                                                this[index] = newValue
                                                 this[index] = newValue
                                             }
                                         },
@@ -277,9 +278,19 @@ fun HomeScreen(navController: NavController) {
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
+                                if (!allFilled){
+                                    Text(
+                                        text = "All fields must be filled",
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+
                                 Row {
                                     Button(onClick = { step = 1 }) {
-                                        Text("Back")
+                                        Text("Back",color= MaterialTheme.colorScheme.tertiary)
                                     }
 
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -303,7 +314,7 @@ fun HomeScreen(navController: NavController) {
                                                 }
                                             }
                                         },
-                                        enabled = !uploading
+                                        enabled = allFilled && !uploading
                                     ) {
                                         if (uploading) {
                                             CircularProgressIndicator(

@@ -367,7 +367,7 @@ fun DataScreen(navController: NavController) {
         )
     }
 
-    if (showComplete && selectedCsv != null) {
+    if (showComplete && selectedCsv != null){
 
         var selectedRowIndex by remember { mutableStateOf(-1) }
         var showDeleteDialog by remember { mutableStateOf(false) }
@@ -488,7 +488,7 @@ fun DataScreen(navController: NavController) {
                 },
 
                 text = {
-                    Text("Do you want to delete this row from Firestore CSV?")
+                    Text("Do you want to delete this row from your Database?")
                 },
 
                 confirmButton = {
@@ -503,18 +503,21 @@ fun DataScreen(navController: NavController) {
 
                             val updatedCsv = lines.joinToString("\n")
 
-                            FirebaseFirestore
-                                .getInstance()
-                                .collection("csvfiles")
-                                .document(selectedCsv!!)
-                                .update("content", updatedCsv)
+                            val ref = FirebaseStorage.getInstance().reference
+                                .child("${userStoragePath()}/${selectedCsv!!}.csv")
 
-                            fullCsvContent = updatedCsv
+                            ref.putBytes(updatedCsv.toByteArray())
+                                .addOnSuccessListener {
+                                    fullCsvContent = updatedCsv
+                                }
+                                .addOnFailureListener {
+                                    println(it.message)
+                                }
 
                             showDeleteDialog = false
                         }
                     ) {
-                        Text("Delete")
+                        Text("Delete",color= MaterialTheme.colorScheme.tertiary)
                     }
                 },
 

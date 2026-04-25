@@ -223,7 +223,7 @@ fun AnalyticsScreen(navController: NavController){
                                     .padding(16.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(fileName)
+                                Text(fileName.removeSuffix(".csv"))
                             }
                         }
                     }
@@ -245,7 +245,7 @@ fun AnalyticsScreen(navController: NavController){
                     ) {
                         CircularProgressIndicator()
                         Spacer(Modifier.height(12.dp))
-                        Text("Generating data analytics...")
+                        Text("Generating data analytics...\n(Ensure your data has minimal discrepancies for faster analysis)")
                     }
                 }
             }
