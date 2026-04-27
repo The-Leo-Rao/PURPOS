@@ -19,6 +19,7 @@ import com.google.firebase.storage.FirebaseStorage
 import android.content.Intent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -245,7 +246,7 @@ fun AnalyticsScreen(navController: NavController){
                     ) {
                         CircularProgressIndicator()
                         Spacer(Modifier.height(12.dp))
-                        Text("Generating data analytics...\n(Ensure your data has minimal discrepancies for faster analysis)")
+                        Text("Generating data analytics...\n(Ensure your data has minimal discrepancies for faster analysis)", textAlign = TextAlign.Center)
                     }
                 }
             }

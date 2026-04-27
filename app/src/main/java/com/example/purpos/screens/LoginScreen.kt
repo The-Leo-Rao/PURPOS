@@ -14,6 +14,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
@@ -123,6 +124,7 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errMessage by remember { mutableStateOf("") }
+    val focusManager=LocalFocusManager.current
 
     LoginUI(
         email = email,
@@ -135,6 +137,7 @@ fun LoginScreen(navController: NavController) {
         onTogglePassword = { passwordVisible = !passwordVisible },
 
         onLoginClick = {
+            focusManager.clearFocus()
             if (email.isBlank() || password.isBlank()) {
                 errMessage = "Please enter email and password"
                 return@LoginUI
@@ -143,7 +146,7 @@ fun LoginScreen(navController: NavController) {
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
+                            popUpTo(0)
                         }
                     } else {
                         errMessage = "Invalid Credentials"

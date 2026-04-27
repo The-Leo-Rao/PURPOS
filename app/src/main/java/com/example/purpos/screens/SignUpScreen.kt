@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.example.purpos.ui.theme.PURPOSTheme
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun SignUpUI(
@@ -170,26 +172,11 @@ fun SignUpScreen(navController: NavController) {
                 }
 
                 else -> {
-                    auth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-
-                                FirebaseAuth.getInstance().currentUser
-                                    ?.sendEmailVerification()
-                                    ?.addOnSuccessListener {
-
-                                        navController.navigate("addn") {
-                                            popUpTo("signup") { inclusive = true }
-                                        }
-
-                                    }
-                                    ?.addOnFailureListener {
-                                        errMessage = "Couldn't send verification email"
-                                    }
-                            } else {
-                                errMessage = task.exception?.message ?: "Signup failed"
-                            }
-                        }
+                    val safeEmail = URLEncoder.encode(email, "UTF-8")
+                    val safePassword = URLEncoder.encode(password, "UTF-8")
+                    navController.navigate("addn/$safeEmail/$safePassword") {
+                        popUpTo("signup") { inclusive = true }
+                    }
                 }
             }
         },

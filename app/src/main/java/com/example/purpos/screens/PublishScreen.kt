@@ -103,12 +103,12 @@ fun PublishScreen(navController: NavController) {
     LaunchedEffect(Unit) {
         volunteerDb.collection("addressedproblems")
             .whereEqualTo("ngo_id", currentNgoId)
-            .get()
-            .addOnSuccessListener { result ->
+            .addSnapshotListener { result, error ->
+                if (error != null || result == null) {
+                    loading = false
+                    return@addSnapshotListener
+                }
                 volunteers = result.documents
-                loading = false
-            }
-            .addOnFailureListener {
                 loading = false
             }
     }
@@ -354,47 +354,46 @@ fun PublishScreen(navController: NavController) {
                 onDismissRequest = { showSecondDialog = false },
                 title = {
                     Text(
-                        text = "Delete/End your post",
+                        text = "Actions",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 },
                 text = {
-                    when {
-                        loading -> {
-                            CircularProgressIndicator()
+                    if (loading) {
+                        CircularProgressIndicator()
+                    } else {
+                        val matchedVolunteers = volunteers.filter {
+                            it.get("post_id").toString() == selectedPost?.time.toString()
                         }
 
-                        volunteers.isEmpty() -> {
-                            Text("No volunteers matched yet.\nDon't Worry! We're at it", textAlign = TextAlign.Left)
-                        }
-
-                        else -> {
-                            val matchedVolunteers = volunteers.filter { doc ->
-                                doc.getLong("post_id") == selectedPost?.time
+                        when {
+                            matchedVolunteers.isEmpty() -> {
+                                Text("No volunteers matched yet.")
                             }
-                            LazyColumn {
-                                items(matchedVolunteers) { doc ->
 
-                                    val name = doc.getString("name") ?: ""
-                                    val city = doc.getString("city") ?: ""
-                                    val sector = doc.getString("sector") ?: ""
-                                    val phone = doc.getString("phone") ?: ""
+                            else -> {
+                                Column(
+                                    modifier = Modifier.heightIn(max = 300.dp)
+                                ) {
+                                    LazyColumn {
+                                        items(matchedVolunteers) { doc ->
 
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        elevation = CardDefaults.cardElevation(4.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(12.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Column {
-                                                Text(name, fontWeight = FontWeight.Bold)
-                                                Text(city)
-                                                Text(sector)
-                                                Text(phone)
+                                            val name = doc.getString("name") ?: ""
+                                            val city = doc.getString("city") ?: ""
+                                            val sector = doc.getString("sector") ?: ""
+                                            val phone = doc.getString("phone") ?: ""
+
+                                            Card(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 4.dp)
+                                            ) {
+                                                Column(Modifier.padding(12.dp)) {
+                                                    Text(name, fontWeight = FontWeight.Bold)
+                                                    Text(city)
+                                                    Text(sector)
+                                                    Text(phone)
+                                                }
                                             }
                                         }
                                     }
@@ -402,16 +401,6 @@ fun PublishScreen(navController: NavController) {
                             }
                         }
                     }
-//                    Column(
-//                        modifier = Modifier
-//                            .heightIn(max = 300.dp)
-//                            .verticalScroll(scrollState)
-//                    ) {
-//                        Text("List of Volunteers")
-//                        Card(modifier = Modifier.fillMaxWidth()) {
-//                            Text("Hi",textAlign = TextAlign.Start)
-//                        }
-//                    }
                 },
                 confirmButton = {
                     TextButton(
@@ -424,7 +413,7 @@ fun PublishScreen(navController: NavController) {
                         }
                     ) {
                         Text(
-                            text = "Completed",
+                            text = "Complete post",
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.bodyLarge
                         )
@@ -441,7 +430,7 @@ fun PublishScreen(navController: NavController) {
                         }
                     ) {
                         Text(
-                            text = "Delete",
+                            text = "Delete post",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.titleMedium
                         )

@@ -12,26 +12,34 @@ import com.example.purpos.screens.DataScreen
 import com.example.purpos.screens.PublishScreen
 import com.example.purpos.screens.ProfileScreen
 import com.example.purpos.screens.AnalyticsScreen
-import com.example.purpos.screens.EmVerificationScreen
 
 @Composable
 fun AppNavigation() {
     val navController=rememberNavController()
     val auth= FirebaseAuth.getInstance()
-    val StartDest=if(auth.currentUser!=null)"home" else "login"
+    val startDest = if (auth.currentUser != null) "home" else "login"
     NavHost(
         navController=navController,
-        startDestination = StartDest
+        startDestination = startDest
     ){
         composable("login"){LoginScreen(navController)}
         composable("signup"){SignUpScreen(navController)}
         composable("home"){HomeScreen(navController)}
         composable("forgotp"){ ForgotPasswordScreen(navController) }
-        composable("addn"){ AddnInfoScreen(navController) }
+        composable("addn/{email}/{password}") { backStackEntry ->
+            val email =
+                backStackEntry.arguments?.getString("email") ?: ""
+            val password =
+                backStackEntry.arguments?.getString("password") ?: ""
+            AddnInfoScreen(
+                navController = navController,
+                email = email,
+                password = password
+            )
+        }
         composable("My Data"){DataScreen(navController)}
         composable("publish"){PublishScreen(navController)}
         composable("profile"){ProfileScreen(navController)}
         composable("analytics"){AnalyticsScreen(navController)}
-        composable("emailver"){EmVerificationScreen(navController)}
     }
 }

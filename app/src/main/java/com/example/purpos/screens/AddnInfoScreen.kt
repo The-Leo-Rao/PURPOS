@@ -63,7 +63,7 @@ fun AddnUI(
             value = name,
             onValueChange = onNameChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Name", color = MaterialTheme.colorScheme.primary) }
+            label = { Text("Organisation Name", color = MaterialTheme.colorScheme.primary) }
         )
 
         Spacer(modifier=Modifier.height(16.dp))
@@ -115,6 +115,7 @@ fun AddnUI(
         val context = LocalContext.current
         val placesClient = remember { Places.createClient(context) }
         var cityquery by remember { mutableStateOf("") }
+        val focusManager=LocalFocusManager.current
         LaunchedEffect(cityquery) {
             if (cityquery.length > 2) {
 
@@ -231,7 +232,6 @@ fun AddnUI(
                 }
             }
         }
-        val focusManager=LocalFocusManager.current
         Spacer(modifier=Modifier.height(16.dp))
         Button(
             colors = ButtonDefaults.buttonColors(
@@ -248,7 +248,11 @@ fun AddnUI(
     }
 }
 @Composable
-fun AddnInfoScreen(navController: NavController) {
+fun AddnInfoScreen(
+    navController: NavController,
+    email: String,
+    password: String
+) {
     var loading by remember { mutableStateOf(false) }
     var name by remember {mutableStateOf("")}
     var sector by remember{mutableStateOf("")}
@@ -270,51 +274,66 @@ fun AddnInfoScreen(navController: NavController) {
         onCityChange = {city=it},
         onStateChange = {state=it},
         onFinnishclick = {
+
             loading = true
+
             val auth = FirebaseAuth.getInstance()
             val db = FirebaseFirestore.getInstance()
-            val user = auth.currentUser
 
-            user?.reload()?.addOnCompleteListener {
+            val current = auth.currentUser
 
-                val refreshedUser = FirebaseAuth.getInstance().currentUser
+            if (current == null) {
 
-                if (refreshedUser != null && refreshedUser.isEmailVerified) {
+                auth.createUserWithEmailAndPassword(email, password)
+                    .addOnSuccessListener {
 
-                    val uid = refreshedUser.uid
+                        auth.currentUser
+                            ?.sendEmailVerification()
 
-                    val data = hashMapOf(
-                        "name" to name,
-                        "locality" to locality,
-                        "city" to city,
-                        "state" to state,
-                        "sector" to sector
-                    )
+                        loading = false
+                        showVerifyDialog = true
+                    }
+                    .addOnFailureListener {
+                        loading = false
+                    }
 
-                    db.collection("users")
-                        .document(uid)
-                        .set(data)
-                        .addOnSuccessListener {
-                            loading = false
-                            navController.navigate("home")
-                        }
-                        .addOnFailureListener {
-                            loading = false
-                        }
+            } else {
 
-                } else {
-                    loading = false
-                    showVerifyDialog = true
+                current.reload().addOnSuccessListener {
+
+                    if (auth.currentUser?.isEmailVerified == true) {
+
+                        val uid = auth.currentUser!!.uid
+
+                        val data = hashMapOf(
+                            "name" to name,
+                            "locality" to locality,
+                            "city" to city,
+                            "state" to state,
+                            "sector" to sector
+                        )
+
+                        db.collection("users")
+                            .document(uid)
+                            .set(data)
+                            .addOnSuccessListener {
+                                loading = false
+                                navController.navigate("home"){popUpTo(0)}
+                            }
+
+                    } else {
+                        loading = false
+                        showVerifyDialog = true
+                    }
                 }
             }
-
         }
     )
     if (showVerifyDialog) {
         AlertDialog(
             onDismissRequest = { showVerifyDialog = false },
             title = { Text("Verify Email",style= MaterialTheme.typography.titleMedium) },
-            text = { Text("Please verify using the link sent to your email. (check Spam as well)") },
+            text = { Text("Please verify using the link sent to your email. (check spam as well)") },
 
             confirmButton = {
                 Row {
@@ -350,8 +369,10 @@ fun AddnInfoScreen(navController: NavController) {
                     ) {
                         Text(
                             "I Verified",
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelSmall,color = MaterialTheme.colorScheme.tertiary
+
                         )
+
                     }
                 }
             },
@@ -363,7 +384,7 @@ fun AddnInfoScreen(navController: NavController) {
                         ?.delete()
                         ?.addOnCompleteListener {
                             FirebaseAuth.getInstance().signOut()
-                            navController.navigate("signup")
+                            navController.navigate("signup"){popUpTo(0)}
                         }
 
                 }) {
