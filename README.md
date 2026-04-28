@@ -59,20 +59,7 @@ The app focuses on bridging the gap between NGOs and volunteers while also helpi
 
 ---
 
-## Project Structure
+## Other links
 
-app/
- ├── screens/
- │   ├── LoginScreen.kt
- │   ├── SignUpScreen.kt
- │   ├── HomeScreen.kt
- │   ├── PublishScreen.kt
- │   ├── DataScreen.kt
- │   ├── AnalyticsScreen.kt
- │   ├── ProfileScreen.kt
- │   └── ForgotPasswordScreen.kt
- │
- ├── navigation/
- │   └── AppNavigation.kt
- │
- └── MainActivity.kt
+Website- https://github.com/garvmahajan20/purpos.git
+Backend-https://github.com/duatdev/PURPOS
