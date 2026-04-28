@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -153,6 +154,7 @@ fun DataScreen(navController: NavController) {
     var renameText by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
+    val focusManager=LocalFocusManager.current
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         selectedImage = uri
@@ -255,6 +257,7 @@ fun DataScreen(navController: NavController) {
                                 showManageDialog = true
                             })
                             IconButton(onClick = {
+                                focusManager.clearFocus()
                                 selectedCsv = fileName
                                 renameText = fileName
                                 showRenameDialog = true
@@ -472,7 +475,7 @@ fun DataScreen(navController: NavController) {
                         onClick = { showComplete = false },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Close")
+                        Text("Close",color= MaterialTheme.colorScheme.tertiary)
                     }
                 }
             }
@@ -517,7 +520,7 @@ fun DataScreen(navController: NavController) {
                             showDeleteDialog = false
                         }
                     ) {
-                        Text("Delete",color= MaterialTheme.colorScheme.tertiary)
+                        Text("Delete",color= MaterialTheme.colorScheme.error)
                     }
                 },
 

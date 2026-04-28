@@ -178,6 +178,7 @@ fun HomeScreen(navController: NavController) {
             var columnCount by remember { mutableStateOf(1) }
             var columnNames by remember { mutableStateOf(List(1) { "" }) }
             val context = LocalContext.current
+            val focusManager=LocalFocusManager.current
 
             Button(onClick = {
                 showDialog = true
@@ -300,6 +301,7 @@ fun HomeScreen(navController: NavController) {
 
                                     Button(
                                         onClick = {
+                                            focusManager.clearFocus()
                                             val fileName = "csv_${System.currentTimeMillis()}"
                                             val csv = createCsvContent(columnNames)
                                             uploading = true

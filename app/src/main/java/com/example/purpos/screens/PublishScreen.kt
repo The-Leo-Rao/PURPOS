@@ -368,7 +368,7 @@ fun PublishScreen(navController: NavController) {
 
                         when {
                             matchedVolunteers.isEmpty() -> {
-                                Text("No volunteers matched yet.")
+                                Text("No volunteers matched yet.\nDon't worry! We're at it.")
                             }
 
                             else -> {
